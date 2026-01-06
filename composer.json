@@ -1,0 +1,15 @@
+{
+    "name": "dell/routing-test",
+    "autoload": {
+        "psr-4": {
+           "App\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Kabita",
+            "email": "kdhimal@devfinity.io"
+        }
+    ],
+    "require": {}
+}
