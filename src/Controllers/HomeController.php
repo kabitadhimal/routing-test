@@ -16,6 +16,7 @@ class HomeController {
     }
 
     public function index(): string {
+        echo $this->dummyClassA->test();
         return "Welcome to our homepage";
     }
     public function about(): string {

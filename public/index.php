@@ -40,11 +40,7 @@ $router = new Router($container);
 
 $router->get('/', [HomeController::class, 'index']);
 $router->get('/about', [HomeController::class, 'about']);
-$router->get('/users/{id}', [UserController::class, 'show']);
+$router->get('/users/{id}/{mode}', [UserController::class, 'show']);
 
 // Resolve current request
 echo $router->resolve();
-
-
-
-

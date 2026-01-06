@@ -57,8 +57,9 @@ class Router
                 array_shift($matches);
 
                 preg_match_all('#\{([\w]+)\}#', $route, $paramNames);
-                $params = array_combine($paramNames[1], $matches);
 
+
+                $params = array_combine($paramNames[1], $matches);
                 return $this->executeCallback($callback, $params);
             }
         }
@@ -76,7 +77,11 @@ class Router
             // ✅ Use container instead of new
             $controller = $this->container->get($class);
 
-            return $controller->$method($params);
+
+
+            var_dump($params, $method);
+
+            return $controller->$method(...$params);
         }
 
         // Closure callback
