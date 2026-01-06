@@ -5,10 +5,9 @@ use App\Router;
 use App\Controllers\HomeController;
 use App\Controllers\UserController;
 
-$router = new Router();
 
 // Define routes
-$router->get('/', [HomeController::class, 'index']);
+//$router->get('/', [HomeController::class, 'index']);
 
 /*
 echo "<pre>";
@@ -18,14 +17,34 @@ echo "</pre>";
 
 
 
-$router->get('/about', [HomeController::class, 'about']);
-$router->get('/users', [UserController::class, 'index']);
-$router->get('/users/{id}', [UserController::class, 'show']);
+//$router->get('/about', [HomeController::class, 'about']);
+//$router->get('/users', [UserController::class, 'index']);
+//$router->get('/users/{id}', [UserController::class, 'show']);
 
 
 // Handle the current request
 
+//echo $router->resolve();
+
+
+$container = new \App\Core\Container;
+
+$router = new Router($container);
+
+ $container->bind('randomID', function() {
+        return rand(1,100);
+ });
+
+ echo $container->get('randomID')."<br/>";   // e.g., 42
+
+
+$router->get('/', [HomeController::class, 'index']);
+$router->get('/about', [HomeController::class, 'about']);
+$router->get('/users/{id}', [UserController::class, 'show']);
+
+// Resolve current request
 echo $router->resolve();
+
 
 
 
