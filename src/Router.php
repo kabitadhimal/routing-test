@@ -8,16 +8,21 @@ class Router
     private array $routes = [];
 
     public function __construct(
-        protected Container $container
+        protected Container $container,
+        protected string $basePath = ''
     ) {}
 
     public function get(string $path, callable|array $callback): void
     {
+        // Normalize trailing slash in registered route
+        $path = rtrim($path, '/') ?: '/';
         $this->routes['GET'][$path] = $callback;
     }
 
     public function post(string $path, callable|array $callback): void
     {
+        // Normalize trailing slash in registered route
+        $path = rtrim($path, '/') ?: '/';
         $this->routes['POST'][$path] = $callback;
     }
 
@@ -26,11 +31,15 @@ class Router
         $httpMethod = $_SERVER['REQUEST_METHOD'];
         $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 
-        // Remove base path if project is in a subfolder
-        $basePath = '/routing-test/public';
-        if (str_starts_with($path, $basePath)) {
+        // Remove base path if project is in a subfolder (configurable)
+        $basePath = $this->basePath !== '' ? $this->basePath : (dirname($_SERVER['SCRIPT_NAME']) ?: '');
+        if ($basePath && str_starts_with($path, $basePath)) {
             $path = substr($path, strlen($basePath));
         }
+
+        var_dump($basePath, $path);
+
+    
 
         // Normalize trailing slash
         $path = rtrim($path, '/') ?: '/';
@@ -48,6 +57,7 @@ class Router
             );
         }
 
+
         // Dynamic routes
         foreach ($this->routes[$httpMethod] as $route => $callback) {
             $pattern = preg_replace('#\{[\w]+\}#', '([\w-]+)', $route);
@@ -58,7 +68,6 @@ class Router
 
                 preg_match_all('#\{([\w]+)\}#', $route, $paramNames);
 
-
                 $params = array_combine($paramNames[1], $matches);
                 return $this->executeCallback($callback, $params);
             }
@@ -68,23 +77,57 @@ class Router
         return '404 Not Found';
     }
 
-    private function executeCallback(callable|array $callback, array $params): mixed
+    private function executeCallback(callable|array $callback, array $routeParams): mixed
     {
         // Controller callback
         if (is_array($callback)) {
             [$class, $method] = $callback;
 
-            // ✅ Use container instead of new
+            // Resolve controller from container
             $controller = $this->container->get($class);
 
+            //Reflect Method
+            $reflection = new \ReflectionMethod($controller, $method);
+            $arguments = [];
 
+            foreach ($reflection->getParameters() as $params) {
+                    $name = $params->getName();
+                    $type = $params->getType();
 
-            var_dump($params, $method);
+                    // class dependency (UserRepo, DummyClassA, etc.)
+                    if($type instanceof \ReflectionNamedType && !$type->isBuiltin()) {
+                        $arguments[] = $this->container->get($type->getName());
+                        continue;
+                    }
 
-            return $controller->$method(...$params);
+                    //route parameter by name
+                    if(isset($routeParams[$name])) {
+                        $value = $routeParams[$name];
+                        //Cast scar types
+                        if($type instanceof \ReflectionNamedType) {
+                            settype($value, $type->getName());
+                        }
+
+                        $arguments[] = $value;
+                        continue;
+                    }
+
+                    // Default value (optional parameter)
+                    if ($params->isDefaultValueAvailable()) {
+                        $arguments[] = $params->getDefaultValue();
+                         continue;
+                    }
+
+                    // Unable to resolve the parameter
+                    throw new \Exception(
+                        "Cannot resolve parameter \${$name} in {$class}::{$method}"
+                    );
+            }
+
+            return $reflection->invokeArgs($controller, $arguments);
         }
 
         // Closure callback
-        return $callback($params);
+        return $callback($routeParams);
     }
 }

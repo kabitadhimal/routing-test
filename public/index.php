@@ -35,12 +35,12 @@ $router = new Router($container);
         return rand(1,100);
  });
 
- echo $container->get('randomID')."<br/>";   // e.g., 42
+ //echo $container->get('randomID')."<br/>";   // e.g., 42
 
 
 $router->get('/', [HomeController::class, 'index']);
 $router->get('/about', [HomeController::class, 'about']);
-$router->get('/users/{id}/{mode}', [UserController::class, 'show']);
-
+$router->get('/users/{id}/{mode}', [UserController::class, 'edit']);
+$router->get('/users', [UserController::class, 'listing']);
 // Resolve current request
 echo $router->resolve();
